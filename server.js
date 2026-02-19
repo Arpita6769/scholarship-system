@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const db = require("./db");
 const authRoutes = require("./routes/authRoutes");
@@ -31,4 +33,12 @@ app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 
+const { verifyToken } = require("./middleware/authMiddleware");
+
+app.get("/protected", verifyToken, (req, res) => {
+  res.json({
+    message: "Protected route accessed",
+    user: req.user,
+  });
+});
 
