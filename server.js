@@ -7,14 +7,12 @@ const authRoutes = require("./routes/authRoutes");
 const app = express();
 const PORT = 3000;
 
-/*app.get("/", (req, res) => {
-  res.send("Scholarship Management System Running 🚀");
-});*/
 app.get("/", (req, res) => {
-  res.send("THIS IS THE REAL SERVER FILE");
+  res.send("Scholarship Management System Running 🚀");
 });
 
 
+app.use(express.json());
 app.get("/test-db", (req, res) => {
   db.query("SELECT 1", (err, result) => {
     if (err) {
@@ -23,7 +21,7 @@ app.get("/test-db", (req, res) => {
     res.send("Database connected successfully ✅");
   });
 });
-app.use(express.json());
+
 app.use("/api/auth", authRoutes);
 app.get("/check", (req, res) => {
   res.send("Check route working");

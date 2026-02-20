@@ -4,7 +4,9 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 
 exports.register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+const { name, email, password } = req.body;
+const role = "student";
+
 
   if (!name || !email || !password || !role) {
     return res.status(400).json({ message: "All fields are required" });
@@ -75,3 +77,48 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.createScholarship = (req, res) => {
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  const {
+    title,
+    description,
+    amount,
+    min_cgpa,
+    max_income,
+    total_seats,
+    deadline
+  } = req.body;
+
+  const sql = `
+    INSERT INTO scholarships
+    (title, description, amount, min_cgpa, max_income, total_seats, deadline)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    sql,
+    [title, description, amount, min_cgpa, max_income, total_seats, deadline],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: "Database error" });
+      }
+      res.status(201).json({ message: "Scholarship created successfully" });
+    }
+  );
+};
+
+exports.getScholarships = (req, res) => {
+  const sql = "SELECT * FROM scholarships";
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    res.json(results);
+  });
+};
