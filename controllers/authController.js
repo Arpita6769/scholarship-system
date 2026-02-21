@@ -51,7 +51,7 @@ exports.login = async (req, res) => {
     }
 
     const user = rows[0];
-
+console.log("USER ID FROM DB:", user.id);
     // 2️⃣ Compare password
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -75,6 +75,7 @@ exports.login = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
+  
 };
 
 exports.createScholarship = (req, res) => {
@@ -121,4 +122,26 @@ exports.getScholarships = (req, res) => {
 
     res.json(results);
   });
+};
+exports.applyScholarship = (req, res) => {
+  const userId = req.user.id;
+  const scholarshipId = req.params.scholarshipId;
+
+  const sql = `
+    INSERT INTO applications (user_id, scholarship_id)
+    VALUES (?, ?)
+  `;
+
+  db.query(sql, [userId, scholarshipId], (err, result) => {
+    if (err) {
+       console.log("DB ERROR:", err);
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).json({ message: "You already applied" });
+      }
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    res.status(201).json({ message: "Application submitted successfully" });
+  });
+  console.log("Decoded user:", req.user);
 };

@@ -4,9 +4,12 @@ const authController = require("../controllers/authController");
 const { verifyToken, authorizeRole } = require("../middleware/authMiddleware");
 const { createScholarship } = require("../controllers/authController");
 const { getScholarships } = require("../controllers/authController");
+const { applyScholarship } = require("../controllers/authController");
+
+
 router.post("/register", authController.register);
 
-module.exports = router;
+
 router.post("/login", authController.login);
 
 router.get(
@@ -20,5 +23,5 @@ router.get(
 
 router.post("/create-scholarship", verifyToken, createScholarship);
 router.get("/scholarships", verifyToken, getScholarships);
-
-
+router.post("/apply/:scholarshipId", verifyToken, applyScholarship);
+module.exports = router;
