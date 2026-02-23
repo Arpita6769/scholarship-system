@@ -4,34 +4,39 @@ const db = require("../db");
 const bcrypt = require("bcrypt");
 
 exports.register = async (req, res) => {
-const { name, email, password } = req.body;
-const role = "student";
+  const { name, email, password, roll_no, cgpa, family_income } = req.body;
+  const role = "student";
 
-
-  if (!name || !email || !password || !role) {
+  if (!name || !email || !password || !roll_no || !cgpa || !family_income) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
   try {
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const query =
-      "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+    const query = `
+      INSERT INTO users 
+      (name, email, password, role, roll_no, cgpa, family_income)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
 
-    db.query(query, [name, email, hashedPassword, role], (err, result) => {
-      if (err) {
-        console.log(err);
-        return res.status(500).json({ message: "User already exists or DB error" });
+    db.query(
+      query,
+      [name, email, hashedPassword, role, roll_no, cgpa, family_income],
+      (err, result) => {
+        if (err) {
+          console.log(err);
+          return res.status(500).json({ message: "User already exists or DB error" });
+        }
+
+        res.status(201).json({ message: "User registered successfully ✅" });
       }
+    );
 
-      res.status(201).json({ message: "User registered successfully ✅" });
-    });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 const jwt = require("jsonwebtoken");
 
@@ -123,25 +128,59 @@ exports.getScholarships = (req, res) => {
     res.json(results);
   });
 };
-exports.applyScholarship = (req, res) => {
-  const userId = req.user.id;
+exports.applyScholarship = async (req, res) => {
+  const userId = req.user.id;   // make sure this matches your JWT
   const scholarshipId = req.params.scholarshipId;
 
-  const sql = `
-    INSERT INTO applications (user_id, scholarship_id)
-    VALUES (?, ?)
-  `;
+  try {
+    // 1️⃣ Get student details
+    const [userRows] = await db.promise().query(
+      "SELECT * FROM users WHERE id = ?",
+      [userId]
+    );
 
-  db.query(sql, [userId, scholarshipId], (err, result) => {
-    if (err) {
-       console.log("DB ERROR:", err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ message: "You already applied" });
-      }
-      return res.status(500).json({ message: "Database error" });
+    if (userRows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
     }
 
+    const user = userRows[0];
+
+    // 2️⃣ Get scholarship details
+    const [scholarshipRows] = await db.promise().query(
+      "SELECT * FROM scholarships WHERE id = ?",
+      [scholarshipId]
+    );
+
+    if (scholarshipRows.length === 0) {
+      return res.status(404).json({ message: "Scholarship not found" });
+    }
+
+    const scholarship = scholarshipRows[0];
+
+    // 3️⃣ Eligibility Check
+    if (user.cgpa < scholarship.min_cgpa) {
+      return res.status(400).json({ message: "Not eligible: CGPA too low" });
+    }
+
+    if (user.family_income > scholarship.max_income) {
+      return res.status(400).json({ message: "Not eligible: Income too high" });
+    }
+
+    // 4️⃣ Insert application
+    await db.promise().query(
+      "INSERT INTO applications (user_id, scholarship_id) VALUES (?, ?)",
+      [userId, scholarshipId]
+    );
+
     res.status(201).json({ message: "Application submitted successfully" });
-  });
-  console.log("Decoded user:", req.user);
+
+  } catch (err) {
+    console.log("DB ERROR:", err);
+
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ message: "You already applied" });
+    }
+
+    res.status(500).json({ message: "Database error" });
+  }
 };
