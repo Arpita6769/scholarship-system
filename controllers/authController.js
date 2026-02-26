@@ -110,6 +110,7 @@ exports.createScholarship = (req, res) => {
     [title, description, amount, min_cgpa, max_income, total_seats, deadline],
     (err, result) => {
       if (err) {
+        console.log("CREATE SCHOLARSHIP ERROR:", err);
         return res.status(500).json({ message: "Database error" });
       }
       res.status(201).json({ message: "Scholarship created successfully" });
