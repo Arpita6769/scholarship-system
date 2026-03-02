@@ -185,3 +185,115 @@ exports.applyScholarship = async (req, res) => {
     res.status(500).json({ message: "Database error" });
   }
 };
+
+exports.approveApplication = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  const applicationId = req.params.applicationId;
+
+  try {
+    // 1️⃣ Get application
+    const [appRows] = await db.promise().query(
+      "SELECT * FROM applications WHERE id = ?",
+      [applicationId]
+    );
+
+    if (appRows.length === 0) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    const application = appRows[0];
+
+    // Optional: prevent re-approval
+    if (application.status === "approved") {
+      return res.status(400).json({ message: "Already approved" });
+    }
+
+    // 2️⃣ Get scholarship
+    const [schRows] = await db.promise().query(
+      "SELECT * FROM scholarships WHERE id = ?",
+      [application.scholarship_id]
+    );
+
+    if (schRows.length === 0) {
+      return res.status(404).json({ message: "Scholarship not found" });
+    }
+
+    const scholarship = schRows[0];
+
+    // 3️⃣ Count approved
+    const [countRows] = await db.promise().query(
+      "SELECT COUNT(*) as total FROM applications WHERE scholarship_id = ? AND status = 'approved'",
+      [application.scholarship_id]
+    );
+
+    if (countRows[0].total >= scholarship.total_seats) {
+      return res.status(400).json({ message: "No seats available" });
+    }
+
+    // 4️⃣ Approve
+    await db.promise().query(
+      "UPDATE applications SET status = 'approved' WHERE id = ?",
+      [applicationId]
+    );
+
+    res.json({ message: "Application approved successfully 🎉" });
+
+  } catch (err) {
+    console.log("APPROVAL ERROR:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+exports.getAllApplications = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT 
+        applications.id,
+        users.name,
+        users.email,
+        scholarships.title,
+        applications.status,
+        applications.applied_at
+      FROM applications
+      JOIN users ON applications.user_id = users.id
+      JOIN scholarships ON applications.scholarship_id = scholarships.id
+    `);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.log("FETCH APPLICATIONS ERROR:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
+
+exports.getMyApplications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [rows] = await db.promise().query(`
+      SELECT 
+        applications.id,
+        scholarships.title,
+        applications.status,
+        applications.applied_at
+      FROM applications
+      JOIN scholarships 
+        ON applications.scholarship_id = scholarships.id
+      WHERE applications.user_id = ?
+    `, [userId]);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.log("MY APPLICATIONS ERROR:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};

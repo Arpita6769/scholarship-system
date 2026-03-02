@@ -6,7 +6,7 @@ const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 const PORT = 3000;
-
+app.use(express.static("public"));
 app.get("/", (req, res) => {
   res.send("Scholarship Management System Running 🚀");
 });
