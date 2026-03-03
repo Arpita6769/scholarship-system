@@ -54,3 +54,76 @@ if (loginForm) {
     }
   });
 }
+// LOAD SCHOLARSHIPS
+const scholarshipList = document.getElementById("scholarshipList");
+
+if (scholarshipList) {
+  fetch("/api/auth/scholarships", {
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      scholarshipList.innerHTML = "";
+
+      data.forEach(sch => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <h3>${sch.title}</h3>
+          <p>${sch.description}</p>
+          <p>Amount: ${sch.amount}</p>
+          <button onclick="applyScholarship(${sch.id})">
+            Apply
+          </button>
+          <hr/>
+        `;
+        scholarshipList.appendChild(div);
+      });
+    });
+}
+function applyScholarship(id) {
+  fetch(`/api/auth/apply/${id}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+      location.reload();
+    });
+}
+
+// LOAD MY APPLICATIONS
+const myApplicationsDiv = document.getElementById("myApplications");
+
+if (myApplicationsDiv) {
+  fetch("/api/auth/my-applications", {
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      myApplicationsDiv.innerHTML = "";
+
+      if (data.length === 0) {
+        myApplicationsDiv.innerHTML = "<p>No applications yet.</p>";
+        return;
+      }
+
+      data.forEach(app => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <h3>${app.title}</h3>
+          <p>Status: <strong>${app.status}</strong></p>
+          <p>Applied At: ${new Date(app.applied_at).toLocaleDateString()}</p>
+          <hr/>
+        `;
+        myApplicationsDiv.appendChild(div);
+      });
+    });
+}
