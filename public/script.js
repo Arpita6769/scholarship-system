@@ -1,3 +1,8 @@
+if (window.location.pathname.includes("student.html")) {
+  if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
+  }
+}
 // REGISTER
 const registerForm = document.getElementById("registerForm");
 
@@ -21,7 +26,12 @@ if (registerForm) {
     });
 
     const result = await res.json();
-    alert(result.message);
+    if (res.ok) {
+  alert("Registration successful 🎉 Please login.");
+  window.location.href = "login.html";
+} else {
+  alert(result.message);
+}
   });
 }
 console.log("Register button clicked");
@@ -126,4 +136,13 @@ if (myApplicationsDiv) {
         myApplicationsDiv.appendChild(div);
       });
     });
+}
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+  });
 }
