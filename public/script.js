@@ -56,10 +56,14 @@ if (loginForm) {
     const result = await res.json();
 
     if (result.token) {
-      localStorage.setItem("token", result.token);
-      alert("Login successful 🎉");
-      window.location.href = "student.html";
-    } else {
+  localStorage.setItem("token", result.token);
+
+  if (result.role === "admin") {
+    window.location.href = "admin.html";
+  } else {
+    window.location.href = "student.html";
+  }
+} else {
       alert(result.message);
     }
   });
@@ -145,4 +149,68 @@ if (logoutBtn) {
     localStorage.removeItem("token");
     window.location.href = "login.html";
   });
+}
+
+const createForm = document.getElementById("createScholarshipForm");
+
+if (createForm) {
+  createForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const data = {
+      title: document.getElementById("title").value,
+      description: document.getElementById("description").value,
+      amount: document.getElementById("amount").value,
+      min_cgpa: document.getElementById("min_cgpa").value,
+      max_income: document.getElementById("max_income").value,
+      total_seats: document.getElementById("seats").value,
+      deadline : document.getElementById("deadline").value,
+    };
+
+    const res = await fetch("/api/auth/create-scholarship", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + localStorage.getItem("token")
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+    alert(result.message);
+    location.reload();
+  });
+}
+
+const applicationsList = document.getElementById("applicationsList");
+
+if (applicationsList) {
+  fetch("/api/auth/applications", {
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+    .then(res => res.json())
+    .then(data => {
+      applicationsList.innerHTML = "";
+
+      if (data.length === 0) {
+        applicationsList.innerHTML = "<p>No applications yet.</p>";
+        return;
+      }
+
+      data.forEach(app => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <h3>${app.student_name}</h3>
+          <p>Scholarship: ${app.title}</p>
+          <p>Status: <strong>${app.status}</strong></p>
+          <button onclick="approveApplication(${app.id})">
+            Approve
+          </button>
+          <hr/>
+        `;
+        applicationsList.appendChild(div);
+      });
+    });
 }

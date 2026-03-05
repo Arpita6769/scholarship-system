@@ -74,6 +74,7 @@ console.log("USER ID FROM DB:", user.id);
     res.json({
       message: "Login successful",
       token,
+      role: user.role
     });
 
   } catch (error) {
@@ -256,7 +257,7 @@ exports.getAllApplications = async (req, res) => {
     const [rows] = await db.promise().query(`
       SELECT 
         applications.id,
-        users.name,
+        users.name AS student_name,
         users.email,
         scholarships.title,
         applications.status,
