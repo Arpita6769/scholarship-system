@@ -23,6 +23,7 @@ router.get(
     res.json({ message: "Welcome Admin 👑" });
   }
 );
+router.post("/reject/:applicationId", verifyToken, authController.rejectApplication);
 router.get("/my-applications", verifyToken, authController.getMyApplications);
 router.get("/applications", verifyToken, authController.getAllApplications);
 router.post("/create-scholarship", verifyToken, authController.createScholarship);

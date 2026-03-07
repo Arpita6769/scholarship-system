@@ -132,11 +132,13 @@ if (myApplicationsDiv) {
       data.forEach(app => {
         const div = document.createElement("div");
         div.innerHTML = `
-          <h3>${app.title}</h3>
-          <p>Status: <strong>${app.status}</strong></p>
-          <p>Applied At: ${new Date(app.applied_at).toLocaleDateString()}</p>
-          <hr/>
-        `;
+  <div class="scholarship-card">
+    <h3>${sch.title}</h3>
+    <p>${sch.description}</p>
+    <p><strong>Amount:</strong> ₹${sch.amount}</p>
+    <button onclick="applyScholarship(${sch.id})">Apply</button>
+  </div>
+`;
         myApplicationsDiv.appendChild(div);
       });
     });
@@ -201,16 +203,50 @@ if (applicationsList) {
 
       data.forEach(app => {
         const div = document.createElement("div");
-        div.innerHTML = `
-          <h3>${app.student_name}</h3>
-          <p>Scholarship: ${app.title}</p>
-          <p>Status: <strong>${app.status}</strong></p>
-          <button onclick="approveApplication(${app.id})">
-            Approve
-          </button>
-          <hr/>
-        `;
+       div.innerHTML = `
+  <div class="application-card">
+    <h3>${app.title}</h3>
+    <p><strong>Student:</strong> ${app.student_name}</p>
+    <p><strong>Email:</strong> ${app.email}</p>
+    <p><strong>Status:</strong> ${app.status}</p>
+
+    <button class="approve-btn" onclick="approveApplication(${app.id})">
+      Approve
+    </button>
+
+    <button class="reject-btn" onclick="rejectApplication(${app.id})">
+      Reject
+    </button>
+  </div>
+`;
         applicationsList.appendChild(div);
       });
     });
+}
+
+function approveApplication(id) {
+  fetch(`/api/auth/approve/${id}`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    location.reload();
+  });
+}
+function rejectApplication(id) {
+  fetch(`/api/auth/reject/${id}`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + localStorage.getItem("token")
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    location.reload();
+  });
 }

@@ -298,3 +298,24 @@ exports.getMyApplications = async (req, res) => {
     res.status(500).json({ message: "Database error" });
   }
 };
+
+exports.rejectApplication = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
+  const applicationId = req.params.applicationId;
+
+  try {
+    await db.promise().query(
+      "UPDATE applications SET status = 'rejected' WHERE id = ?",
+      [applicationId]
+    );
+
+    res.json({ message: "Application rejected ❌" });
+
+  } catch (err) {
+    console.log("REJECT ERROR:", err);
+    res.status(500).json({ message: "Database error" });
+  }
+};
